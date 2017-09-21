@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>Image-Net</title>
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+		<link rel="stylesheet" type="text/css" href="http://localhost:3000/styles.css">
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.6.1/react.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.6.1/react-dom.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.2.9/browser.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+		<script type="text/babel">
+			const TreeComponent = React.createClass({
+				name: 'TreeComponent',
+				propTypes: {
+					defaultTree: React.PropTypes.object
+				},
+				getDefaultProps: function() {
+					return {
+						defaultTree: { name: "ImageNet 2011 Fall Release", size: 32326, children: [], active: true}
+					};
+				},
+				getInitialState: function() {
+					return {
+						tree: this.props.defaultTree
+					};
+				},
+				componentWillMount: function() {
+					var _this = this;
+					$.ajax({
+						url: 'http://localhost:3000/tree.json',
+						success: function(data){
+							_this.setState({
+								tree: data
+							});
+						}
+					});
+				},
+				componentDidMount: function() {
+
+				},
+				_searchNode: function(path){
+
+				},
+				toggleNode: function(ev){
+					let path = ev.currentTarget.id;
+					path = path.split('-');
+					let temp = this.state.tree;
+					let current = temp;
+					for(let i=1; i<path.length; i++){
+						current = current.children[+path[i]];
+					}
+					if(current.active === true){
+						let queue = [current];
+						while(queue.length>0){
+							queue[0].active = false;
+							for(let i=0; i<queue[0].children.length; i++)
+								queue.push(queue[0].children[i]);
+							queue.shift();
+						}
+					}else
+						current.active = true;
+					this.setState(temp);
+				},
+				createTreeNode: function(node, prefix){
+					let x;
+					if(node.children.length>0 && node.active){
+						x = (<li>
+								<label className="node sub-tree" id={ prefix } onClick={this.toggleNode}><i className="glyphicon glyphicon-circle-arrow-down"/>{ node.name+" ("+node.size+")" }</label>
+								<ul>
+									{node.children.map(function(i, idx){
+										return this.createTreeNode(i, prefix+"-"+idx);
+									}.bind(this))}
+								</ul>
+							</li>);
+					}else if(node.children.length>0 && !node.active){
+						x = (<li>
+								<label className="node sub-tree" id={ prefix } onClick={this.toggleNode}><i className="glyphicon glyphicon-circle-arrow-right"/>{ node.name+" ("+node.size+")" }</label>
+							</li>);
+					}else{
+						x = (<li><label className="node" id={ prefix }>{ node.name }</label></li>);
+					}
+					return x;
+				},
+				render: function() {
+					return (<div>
+						<header className="clearfix">
+							<a href="http://image-net.org/explore" target="_blank"><img src="http://image-net.org/logo.png" alt="Image Net"/></a>
+							<form>
+								<input type="text"/>
+								<button type="submit">SEARCH</button>
+							</form>							
+						</header>
+						<div className="container">
+							<div className="row">
+								<ul className="col-sm-6">{this.createTreeNode(this.state.tree, "0")}</ul>
+								<div className="col-sm-6"></div>
+							</div>
+						</div>
+					</div>);
+				}
+			});
+			ReactDOM.render(<TreeComponent/>, document.getElementById('root'));
+		</script>
+	</head>
+	<body>
+		<div id="root"></div>
+	</body>
+</html>
