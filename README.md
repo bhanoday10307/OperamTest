@@ -16,43 +16,71 @@ Copyright (c) Bhanoday Puram, 2017
 **Local Copy**  - To get a local copy, move to the parent directory you would like to hold this repository and clone the repository from your terminal as follows:
 
 ```
-git clone git@github.com:bhanoday10307/AmbiTest.git
+git clone git@github.com:bhanoday10307/OperamTest.git
 ```
 
-To test the React App, first import the module into your . then using the reference of the imported module, call the method rewriteFiles() passing an array of filenames as the reference. make sure all the files are within the current directory as the module.
-
-**For example:**
-```
-const fr = require('./rewriteFiles.js');
-
-fr.rewriteFiles(["readMe.txt", "readMe2.txt"])
-```
-
-Or copy the contents of the module into an online compiler such as [Codepad](https://codepad.remoteinterview.io/) or
-[Repl.it](https://repl.it/languages/javascript).
+To test the React App, first make sure you have all the dependencies installed, your local MongoDB Server is running, and start the server (i.e run node server.js) in the root of this package.
 
 ## Design 
 
 ### Step 1: Getting the data
 
-* 
-* Initially I tried solving this using streams in Node. But I was unable to stream from a file to itself. So switched to solving it with reading and writing on the files.
-* Then, the major crux of the problem is with how to asynchronously read line by line from a file and in parallel process and write to the same file.
-* To solve that, I have used the events module of Node to create a custom event called `line` and emitted it whenever the next() method of the ReadFileAsync class is called.
-* I extended the EventEmitter class from events module to create custom event called `line`. whenever the `next()` method is called on ReadFileAsync class, I make sure that the buffer has the next line of text from the file and then emit the `line` event passing the line of text as input to the event handler.
-* As the entire rewriting of one file is within the callback function to opening the file, All the files asyncronously are rewritten using the for loop to open each.
-* To replace the text within double quotes in the given line, I have created a function `processLine` which takes in the line of string as input traces over the line finding pairs of double quotes and reversing & replacing the text within them.
-* I wired this `processLine` method to the `line` event callback to process the line. when this processing is done just write it back to the file at the same pointer.
-* Also I used two pointers, one to track the reading text from the file into the buffer, and the other to track the writing into the file.
+* To get the data from the [ImageNet API
+](http://image-net.org/download-API), I made use of the File System module(a core module for NodeJS), and Async Request module(a custom module for NodeJS).
+* I used pre ordered Depth First Search pattern in this algorithm using Recursion to get the tree node's sequentially, and thus prefixing the parent's name to each node in the tree.
+* Finally When I have all the nodes in an array (as shown below). I have streamed the list of all Javascript objects into a json file.
+
+```
+[
+    {name: 'ImageNet 2011 Fall Release', size: 32326},
+    {name: 'ImageNet 2011 Fall Release > plant, flora, plant life', size: 4486},
+    {name: 'ImageNet 2011 Fall Release > plant, flora, plant life > phytoplankton', size: 2},
+    {name: 'ImageNet 2011 Fall Release > plant, flora, plant life > phytoplankton > planktonic algae', size: 0},
+    {name: 'ImageNet 2011 Fall Release > plant, flora, plant life > phytoplankton > diatom', size: 0},
+    {name: 'ImageNet 2011 Fall Release > plant, flora, plant life > microflora', size: 0},
+    ...
+]
+```
 
 ### Step 2: Storing the data into a Database
 
+* To store the data that I obtained in step 1, I used the MongoDB database and it's associated NodeJS driver (i.e. MongoDB module).
+* Creating a database (say image-net) in my local Mongo Database, then creating a collection (say wordnets) within the database. I have dumped all the documents/Javascript objects that I created in step 1, using the below command.
+
+```
+mongoimport --db <db-name> --collection <collection-name> --drop --file ~/path/to/data-dump-file.json
+```
+
 ### Step 3: Converting the data into a Tree structure, by reading data sequentially from the Database.
+
+* From steps 1 & 2, I have all the nodes each with it's name as the path from root (say a > b > c for node c).
+* Here I queried the database for all the documents/javascript objects from the database collection, in the order they were inserted (which was the pre ordered DFS traversal).
+* Using the same order, I created the entire tree as a single gaint object (as shown below), inserting each node's children as an array within the node.
+
+```
+{
+    name: 'ImageNet 2011 Fall Release',
+    size: 32326,
+    children: [
+        {
+            name: 'plant, flora, plant life',
+            size: 4486,
+            children: [
+                {
+                    name: 'phytoplankton',
+                    size: 2,
+                    children: [
+                        ...
+                    ]
+                },
+                ...
+            ]
+        },
+        ...
+    ]
+}
+```
 
 ### Step 4: Creating an interface to present the data/tree to an end user.
 
-## Algorithm - (Psuedo Code)
-
-* I loop over the list of files and open them in 'r+' mode which enables to both read and write to the file. and as a callback to the open method, I pass in the `rewriteFile` method. which initiates the rewriting by calling next() on the instances of ReadFileAsync class for all the files asyncronously.
-* Now with each file, whenever the next() is called, the buffer if empty, reloads by reading from the file, and traces the next line in the buffer to be processed and emits the `line` event.
-* When the `line` event fires the callback is fired which gets the line of string to reverse the stings enclosed within double quotes. and writes the line of text back to the file. once it writes back successfully, It calls the next() method again and steps 2, 3 gets repeated(unless the end of file is reached).
+* To create an interface to present the tree that I created in step 3, I chose to use React as it is great at presenting.

@@ -39,8 +39,6 @@ function appendNode(id, prefix) {
 	if(prefix !== "")
 		name = prefix+" > "+name;
 	let node = new ListNode(id, name, size);
-	// if(nodeList.length > 10)
-	// 	return;
 	nodeList.push(node);
 	fs.writeSync(fd, JSON.stringify(node, null, 1), null, 'utf8');
 	console.log(node);
@@ -59,7 +57,6 @@ function appendNode(id, prefix) {
 }
 appendNode("nfall11", "");
 console.log(nodeList.length);
-//console.log(Object.keys(idWordMap).length);//82115
 fs.closeSync(fd);
 MongoClient.connect(url, function(err, db) {
   if (err) throw err;
@@ -69,8 +66,3 @@ MongoClient.connect(url, function(err, db) {
   	console.log("successfully inserted documents into wordnets collection");
   });
 });
-//mongoimport --db test --collection restaurants --drop --file ~/downloads/primer-dataset.json
-//https://stackoverflow.com/questions/494035/how-do-you-use-a-variable-in-a-regular-expression
-//https://stackoverflow.com/questions/169008/regex-for-parsing-directory-and-filename
-
-//https://stackoverflow.com/questions/1949731/how-can-i-escape-a-literal-string-i-want-to-interpolate-into-a-regular-expressio
